@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CLICK BATTLE - Microsoft Word Kelas 7 - SMPN 2 Gandusari</title>
+<style>
+:root{
+  --night:#0c0527; --deep:#170a45; --panel:rgba(18,9,56,.82);
+  --cyan:#18e4ff; --cyang:rgba(24,228,255,.5);
+  --pink:#ff3d8f; --pinkg:rgba(255,61,143,.5);
+  --gold:#ffd93b; --lime:#41f58c; --red:#ff4b4b;
+  --ink:#f4f1ff; --muted:#b3a8e6;
+  --font:"Trebuchet MS","Segoe UI",Roboto,system-ui,sans-serif;
+  --display:"Arial Black","Segoe UI Black","Impact",Haettenschweiler,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--night);color:var(--ink);font-family:var(--font)}
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:disabled{cursor:not-allowed}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:4px solid var(--gold);outline-offset:3px}
+input,select{font:inherit;color:inherit}
+
+/* ===== Latar: arcade + kamera depan ===== */
+#stage{position:fixed;inset:0;z-index:0;overflow:hidden}
+#bg{position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 0%,#3d1b94 0%,#170a45 48%,#0c0527 100%)}
+#stars{position:absolute;inset:0;opacity:.35;
+  background-image:radial-gradient(#fff 1px,transparent 1.6px),radial-gradient(var(--gold) 1px,transparent 1.6px);
+  background-size:97px 97px,151px 151px;background-position:0 0,40px 60px}
+#grid{position:absolute;left:-60%;right:-60%;bottom:-4%;height:58%;
+  background-image:linear-gradient(rgba(24,228,255,.38) 2px,transparent 2px),linear-gradient(90deg,rgba(255,61,143,.38) 2px,transparent 2px);
+  background-size:72px 72px;transform:perspective(380px) rotateX(62deg);transform-origin:50% 100%;
+  animation:gridmove 3.2s linear infinite;-webkit-mask-image:linear-gradient(transparent,#000 65%);mask-image:linear-gradient(transparent,#000 65%)}
+@keyframes gridmove{to{background-position:0 72px,0 0}}
+#cam{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);opacity:0;transition:opacity .15s}
+.shade{position:absolute;inset:0;background:rgba(8,4,30,var(--sh,.28))}
+.shade::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 3px);pointer-events:none}
+
+/* ===== Kerangka ===== */
+#app{position:relative;z-index:1;height:100%;height:100dvh;display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;gap:1.1vh;padding:1.2vh 1.2vw}
+header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:2vw}
+.logo{font-family:var(--display);font-size:clamp(24px,min(3.8vw,6.2vh),60px);line-height:1;color:#fff;letter-spacing:.02em;
+  text-shadow:3px 3px 0 var(--pink),6px 6px 0 var(--cyan)}
+.logo.big{font-size:clamp(34px,min(7vw,11vh),96px);text-align:center;margin-bottom:1.2vh}
+.meta{text-align:center;line-height:1.25}
+.meta b{display:block;font-size:clamp(14px,min(1.7vw,2.9vh),30px)}
+.meta span{color:var(--muted);font-size:clamp(12px,min(1.3vw,2.3vh),22px)}
+#progress{display:flex;gap:.3vw;justify-self:end;align-items:center}
+.seg{width:clamp(6px,.85vw,16px);height:clamp(10px,1.9vh,22px);border-radius:3px;background:rgba(255,255,255,.2)}
+.seg.done{background:var(--gold)}
+.seg.cur{background:#fff;animation:blink .8s steps(2) infinite}
+@keyframes blink{50%{opacity:.25}}
+
+#arena{display:grid;grid-template-columns:minmax(0,1fr) clamp(130px,13vw,210px) minmax(0,1fr);gap:1.1vw;min-height:0}
+
+/* ===== Panel tim ===== */
+.panel{--tc:var(--cyan);--tcg:var(--cyang);display:flex;flex-direction:column;gap:1vh;min-height:0;padding:1.3vh 1.1vw;
+  border:4px solid var(--tc);border-radius:24px;background:rgba(18,9,56,var(--pa,.82));backdrop-filter:blur(var(--bl,4px));
+  box-shadow:0 0 0 3px rgba(0,0,0,.5),0 0 26px var(--tcg),inset 0 0 40px rgba(255,255,255,.04)}
+.panel.t1{--tc:var(--pink);--tcg:var(--pinkg)}
+.p-head{display:flex;align-items:center;justify-content:space-between;gap:1vw}
+.p-name{font-family:var(--display);font-size:clamp(18px,min(2.5vw,4.2vh),46px);color:var(--tc);text-shadow:0 3px 0 rgba(0,0,0,.55);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.p-score{display:flex;align-items:baseline;gap:.5vw}
+.p-score b{font-family:var(--display);font-size:clamp(28px,min(4vw,6.6vh),78px);line-height:1;color:var(--gold);text-shadow:0 4px 0 #7a4b00;font-variant-numeric:tabular-nums}
+.p-score span{color:var(--muted);font-size:clamp(12px,1.2vw,20px)}
+.p-score b.pop{animation:pop .5s}
+@keyframes pop{30%{transform:scale(1.28)}100%{transform:scale(1)}}
+.p-status{min-height:1.5em;font-weight:700;color:var(--muted);font-size:clamp(13px,min(1.35vw,2.3vh),25px)}
+.p-status.locked{color:var(--tc)}
+.p-status.warn{color:var(--gold)}
+body.cam .meta,body.cam .p-status,body.cam #nextInfo,body.cam .p-name,body.cam .qnum,body.cam .p-res{text-shadow:0 2px 6px #000,0 0 3px #000}
+body.cam #ticker,body.cam #controls{background:rgba(0,0,0,.72)}
+.p-q{padding:1.2vh 1.1vw;border-radius:16px;background:rgba(10,5,35,var(--pq,.55));border-left:8px solid var(--tc);
+  font-size:clamp(17px,min(2.2vw,3.9vh),42px);font-weight:800;line-height:1.25;overflow:auto}
+.opts{flex:1;min-height:0;display:grid;grid-template-rows:repeat(var(--n,4),minmax(0,1fr));gap:1.1vh}
+.opt{display:flex;align-items:center;gap:.9vw;text-align:left;padding:0 1vw;min-height:0;overflow:hidden;
+  border-radius:18px;border:3px solid rgba(255,255,255,.2);background:linear-gradient(#35208f,#241470);
+  box-shadow:0 .8vh 0 #0a0432;font-size:clamp(15px,min(1.85vw,3.3vh),33px);font-weight:700;line-height:1.15;
+  transition:transform .08s,box-shadow .08s,opacity .2s}
+.opt.pressed{transform:translateY(.6vh);box-shadow:0 .2vh 0 #0a0432}
+.opt .key{flex:none;display:grid;place-items:center;width:2.1em;height:2.1em;border-radius:50%;font-family:var(--display);color:#1a0a3a;
+  box-shadow:inset 0 -.25em 0 rgba(0,0,0,.25),0 0 0 3px rgba(0,0,0,.4)}
+.opt[data-i="0"] .key{background:#ff5a5a}
+.opt[data-i="1"] .key{background:#ffd93b}
+.opt[data-i="2"] .key{background:#41f58c}
+.opt[data-i="3"] .key{background:#5aa0ff}
+.opt .txt{flex:1}
+.opt .mark{flex:none;font-size:1.3em;font-weight:900}
+.opt.picked{border-color:var(--tc);background:linear-gradient(var(--tcg),var(--tcg)),linear-gradient(#35208f,#241470);box-shadow:0 .8vh 0 #0a0432,0 0 22px var(--tcg)}
+.panel.locked .opt:not(.picked){opacity:.42}
+.opt.correct{border-color:var(--lime);background:linear-gradient(rgba(65,245,140,.38),rgba(65,245,140,.38)),#164d36;opacity:1!important}
+.opt.correct .mark{color:var(--lime)}
+.opt.wrong{border-color:var(--red);background:linear-gradient(rgba(255,75,75,.38),rgba(255,75,75,.38)),#4d1620;opacity:1!important}
+.opt.wrong .mark{color:var(--red)}
+.opt.dim{opacity:.35!important}
+.panel.shake{animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.p-res{min-height:2.3em;display:flex;align-items:center;gap:.7em;font-family:var(--display);font-size:clamp(15px,min(1.7vw,3vh),30px)}
+.p-res small{font-family:var(--font);font-weight:700;color:var(--muted);font-size:.7em}
+.p-res.good{color:var(--lime)} .p-res.fast{color:var(--gold)} .p-res.bad{color:var(--red)} .p-res.none{color:var(--muted)}
+
+/* ===== Tengah ===== */
+.mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.3vh;text-align:center;min-height:0}
+.qnum{font-family:var(--display);font-size:clamp(20px,min(2.4vw,4vh),44px);line-height:1.05;text-shadow:3px 3px 0 #000}
+.qnum small{display:block;font-family:var(--font);font-weight:700;color:var(--muted);font-size:.55em;text-shadow:none}
+#timer{position:relative;width:clamp(100px,min(11vw,19vh),190px);aspect-ratio:1}
+#timer svg{width:100%;height:100%;transform:rotate(-90deg)}
+#timer .bgc{fill:rgba(0,0,0,.35);stroke:rgba(255,255,255,.16);stroke-width:10}
+#timer .fgc{fill:none;stroke:var(--gold);stroke-width:10;stroke-linecap:round;stroke-dasharray:326.73;stroke-dashoffset:0}
+#timer b{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-size:clamp(28px,min(4vw,7vh),70px);text-shadow:0 3px 0 #000;font-variant-numeric:tabular-nums}
+#timer.hot .fgc{stroke:var(--red)}
+#timer.hot b{color:var(--red);animation:pulse .5s infinite alternate}
+@keyframes pulse{to{transform:scale(1.15)}}
+.vs{font-family:var(--display);font-size:clamp(22px,min(3vw,5vh),52px);color:#fff;text-shadow:3px 3px 0 var(--pink),-3px -3px 0 var(--cyan)}
+#nextInfo{min-height:1.4em;color:var(--muted);font-weight:700;font-size:clamp(12px,min(1.2vw,2.1vh),20px)}
+.legend{padding:.6vh .8vw;border-radius:12px;background:rgba(255,217,59,.14);border:2px solid rgba(255,217,59,.5);color:var(--gold);font-weight:800;font-size:clamp(11px,min(1.1vw,1.9vh),18px);line-height:1.25}
+
+#ticker{display:flex;align-items:center;gap:.8em;min-height:2.4em;padding:.9vh 1.3vw;border-radius:14px;background:rgba(0,0,0,.5);border:2px dashed rgba(255,217,59,.6);font-size:clamp(13px,min(1.45vw,2.5vh),27px);line-height:1.3}
+#ticker b{color:var(--gold)}
+
+/* ===== Kontrol guru ===== */
+#controls{display:flex;flex-wrap:wrap;gap:.8vw;align-items:center;justify-content:center;padding:.9vh 1vw;border-radius:18px;background:rgba(0,0,0,.55);border:2px solid rgba(255,255,255,.16)}
+.cbtn{min-height:56px;padding:0 22px;border-radius:14px;background:#3a2aa8;box-shadow:0 5px 0 #130a52;font-weight:800;font-size:clamp(15px,1.35vw,22px);white-space:nowrap;transition:transform .08s,box-shadow .08s}
+.cbtn:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 #130a52}
+.cbtn:disabled{opacity:.3;box-shadow:none}
+.cbtn.start{background:var(--lime);color:#06331c;box-shadow:0 5px 0 #14803f}
+.cbtn.pause{background:var(--gold);color:#3b2a00;box-shadow:0 5px 0 #a07a00}
+.cbtn.resume{background:var(--cyan);color:#022f38;box-shadow:0 5px 0 #0d8da1}
+.cbtn.reset{background:var(--red);color:#3d0000;box-shadow:0 5px 0 #a02020}
+.cbtn.reset.arm{background:#fff;color:#a00000;animation:blink .5s steps(2) infinite}
+.sep{width:2px;align-self:stretch;background:rgba(255,255,255,.18);margin:0 .3vw}
+.bgctl{display:flex;align-items:center;gap:.8em;min-height:56px;padding:0 16px;border-radius:14px;background:rgba(255,255,255,.09);font-weight:700;font-size:clamp(13px,1.15vw,19px)}
+.bgctl output{min-width:5.2em;text-align:right;color:var(--gold)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:clamp(120px,14vw,240px);height:16px;border-radius:99px;background:linear-gradient(90deg,#4b2fb8,var(--cyan));outline-offset:6px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:38px;height:38px;border-radius:50%;background:var(--gold);border:4px solid #3b2a00;box-shadow:0 3px 0 rgba(0,0,0,.5)}
+input[type=range]::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:var(--gold);border:4px solid #3b2a00}
+#ctlShow{position:fixed;right:1.2vw;bottom:1.2vh;z-index:6;display:none;min-height:48px;padding:0 18px;border-radius:14px;background:rgba(0,0,0,.65);border:2px solid rgba(255,255,255,.25);font-weight:800}
+#arena,header,#ticker{opacity:var(--ui,1)}
+body.hide-ctl #controls{display:none}
+body.hide-ctl #ctlShow{display:block}
+
+/* ===== Overlay ===== */
+.ov{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;padding:2.5vh 3vw;background:rgba(8,4,30,.84);backdrop-filter:blur(6px);overflow:auto}
+.ov.on{display:flex}
+.card{width:min(1000px,100%);max-height:100%;overflow:auto;padding:3vh 3vw;border:4px solid var(--gold);border-radius:28px;background:#150a42;box-shadow:0 0 0 4px #000,0 0 50px rgba(255,217,59,.35)}
+.sub{text-align:center;color:var(--muted);font-weight:700;margin-bottom:2.2vh;font-size:clamp(14px,1.5vw,24px)}
+.teams{display:grid;grid-template-columns:1fr 1fr;gap:1.5vw;margin-bottom:2vh}
+.tin{display:flex;flex-direction:column;gap:.6vh;font-weight:800;font-size:clamp(13px,1.2vw,20px)}
+.tin input{height:56px;padding:0 16px;border-radius:14px;border:4px solid var(--c);background:#0c0527;font-family:var(--display);font-size:clamp(18px,1.8vw,30px);color:var(--c)}
+.tin.t0{--c:var(--cyan)} .tin.t1{--c:var(--pink)}
+.setg{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2vw;margin-bottom:2vh}
+.setg label{display:flex;flex-direction:column;gap:.6vh;font-weight:700;font-size:clamp(13px,1.15vw,19px)}
+.setg select,.setg input[type=number]{height:52px;padding:0 12px;border-radius:12px;border:3px solid rgba(255,255,255,.3);background:#0c0527}
+.setg label.chk{flex-direction:row;align-items:center;gap:.7em;min-height:52px}
+.setg input[type=checkbox]{width:28px;height:28px;accent-color:var(--gold)}
+.bankrow{display:flex;flex-wrap:wrap;align-items:center;gap:1vw;padding:1.2vh 1.2vw;margin-bottom:2vh;border-radius:14px;background:rgba(255,255,255,.07);font-size:clamp(13px,1.15vw,19px)}
+.bankrow #bankInfo{flex:1;min-width:200px;font-weight:700}
+.bankrow .cbtn{min-height:48px;font-size:clamp(13px,1.1vw,18px)}
+.rules{margin:0 0 2.2vh 1.4em;line-height:1.5;color:var(--muted);font-size:clamp(13px,1.15vw,19px)}
+.go{display:block;width:100%;min-height:76px;border-radius:20px;background:var(--lime);color:#06331c;font-family:var(--display);font-size:clamp(24px,3vw,44px);box-shadow:0 8px 0 #14803f;transition:transform .08s,box-shadow .08s}
+.go:active{transform:translateY(6px);box-shadow:0 2px 0 #14803f}
+.note{margin-top:1.4vh;text-align:center;color:var(--muted);font-size:clamp(11px,1vw,16px)}
+#ready{z-index:25;background:rgba(8,4,30,.72);flex-direction:column;gap:1vh;pointer-events:none}
+#ready b{font-family:var(--display);font-size:min(34vh,34vw);line-height:1;color:var(--gold);text-shadow:6px 6px 0 var(--pink),12px 12px 0 var(--cyan);animation:pop .6s}
+#ready span{font-size:clamp(18px,2.4vw,40px);font-weight:800}
+#pauseOv{z-index:22;flex-direction:column;gap:3vh;background:rgba(8,4,30,.94)}
+#pauseOv h2{font-family:var(--display);font-size:min(16vh,14vw);color:var(--gold);text-shadow:6px 6px 0 var(--pink)}
+#pauseOv .cbtn{min-height:76px;font-size:clamp(20px,2.4vw,36px);padding:0 44px}
+#result .card{position:relative;text-align:center;border-color:var(--gold)}
+#result h2{font-family:var(--display);font-size:clamp(22px,3vw,48px);color:var(--muted)}
+#resTitle{font-family:var(--display);font-size:clamp(34px,6.4vw,100px);line-height:1.05;margin:1vh 0 2.4vh;color:var(--gold);text-shadow:5px 5px 0 #000}
+.rcards{display:grid;grid-template-columns:1fr 1fr;gap:1.5vw;margin-bottom:2.4vh}
+.rc{--c:var(--cyan);padding:2vh 1.4vw;border:4px solid var(--c);border-radius:20px;background:rgba(255,255,255,.05);text-align:left}
+.rc.t1{--c:var(--pink)}
+.rc.win{box-shadow:0 0 30px var(--c);background:rgba(255,255,255,.1)}
+.rc .rn{font-family:var(--display);color:var(--c);font-size:clamp(18px,2vw,34px)}
+.rc .rs{font-family:var(--display);color:var(--gold);font-size:clamp(34px,5vw,84px);line-height:1.1;text-shadow:0 4px 0 #7a4b00}
+.rc ul{list-style:none;line-height:1.6;font-weight:700;font-size:clamp(13px,1.2vw,20px)}
+.dots{display:flex;flex-wrap:wrap;gap:4px;margin-top:1vh}
+.dots i{width:clamp(10px,1.1vw,18px);height:clamp(10px,1.1vw,18px);border-radius:4px;background:rgba(255,255,255,.2)}
+.dots i.benar{background:var(--lime)} .dots i.bonus{background:var(--gold)} .dots i.salah{background:var(--red)}
+.rbtns{display:flex;gap:1.2vw;justify-content:center;flex-wrap:wrap}
+.conf{position:absolute;top:-6vh;width:1.2vmin;height:2.4vmin;animation:fall linear forwards;pointer-events:none;z-index:30}
+@keyframes fall{to{transform:translateY(115vh) rotate(720deg)}}
+#toast{position:fixed;left:50%;bottom:11vh;transform:translateX(-50%);z-index:40;max-width:80vw;padding:14px 22px;border-radius:14px;background:#fff;color:#1a0a3a;font-weight:800;box-shadow:0 6px 0 rgba(0,0,0,.4);display:none;text-align:center}
+#toast.on{display:block}
+
+@media (max-aspect-ratio:1/1){
+  #arena{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto minmax(0,1fr)}
+  .mid{flex-direction:row;justify-content:space-around}
+  header{grid-template-columns:1fr}
+  .meta,#progress{justify-self:center}
+  .setg,.teams,.rcards{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div id="stage" aria-hidden="true">
+  <div id="bg"></div><div id="stars"></div><div id="grid"></div>
+  <video id="cam" autoplay muted playsinline></video>
+  <div class="shade"></div>
+</div>
+
+<div id="app">
+  <header>
+    <div class="logo">CLICK BATTLE</div>
+    <div class="meta"><b>Microsoft Word Kelas 7</b><span>SMPN 2 Gandusari</span></div>
+    <div id="progress" aria-label="Kemajuan soal"></div>
+  </header>
+
+  <main id="arena">
+    <section class="panel t0" id="panel0" aria-label="Panel tim kiri"></section>
+    <aside class="mid">
+      <div class="qnum" id="qnum">Siap?<small>&nbsp;</small></div>
+      <div id="timer" role="timer" aria-live="off">
+        <svg viewBox="0 0 120 120"><circle class="bgc" cx="60" cy="60" r="52"/><circle class="fgc" id="ring" cx="60" cy="60" r="52"/></svg>
+        <b id="tnum">--</b>
+      </div>
+      <div class="vs">VS</div>
+      <div id="nextInfo"></div>
+      <div class="legend">Benar = 100<br>Benar tercepat +50</div>
+    </aside>
+    <section class="panel t1" id="panel1" aria-label="Panel tim kanan"></section>
+  </main>
+
+  <div id="ticker" aria-live="polite"></div>
+
+  <footer id="controls">
+    <button class="cbtn start" id="bStart">▶ Mulai</button>
+    <button class="cbtn pause" id="bPause">⏸ Jeda</button>
+    <button class="cbtn resume" id="bResume">⏵ Lanjut</button>
+    <button class="cbtn" id="bSkip" title="Selesaikan soal sekarang atau langsung ke soal berikutnya">⏭ Lewati</button>
+    <button class="cbtn reset" id="bReset">↺ Reset</button>
+    <span class="sep"></span>
+    <label class="bgctl" for="bgRange"><span>Latar</span>
+      <input type="range" id="bgRange" min="0" max="100" value="50" aria-label="Latar belakang dari arcade ke kamera depan">
+      <output id="bgVal">Kamera 50%</output></label>
+    <button class="cbtn" id="bSound">🔊 Suara</button>
+    <button class="cbtn" id="bFull">⛶ Layar penuh</button>
+    <button class="cbtn" id="bHide" title="Sembunyikan kontrol guru">▾</button>
+  </footer>
+</div>
+<button id="ctlShow" aria-label="Tampilkan kontrol guru">▴ Kontrol guru</button>
+
+<!-- Pengaturan awal -->
+<div class="ov on" id="setup">
+  <div class="card">
+    <div class="logo big">CLICK BATTLE</div>
+    <p class="sub">Microsoft Word Kelas 7<br>SMPN 2 Gandusari</p>
+    <div class="teams">
+      <label class="tin t0"><span>Nama tim kiri</span><input id="n0" maxlength="14" autocomplete="off"></label>
+      <label class="tin t1"><span>Nama tim kanan</span><input id="n1" maxlength="14" autocomplete="off"></label>
+    </div>
+    <div class="setg">
+      <label>Waktu per soal
+        <select id="cTime"><option value="10">10 detik</option><option value="15">15 detik</option><option value="20">20 detik</option><option value="30">30 detik</option><option value="45">45 detik</option><option value="60">60 detik</option></select></label>
+      <label>Jumlah soal
+        <input type="number" id="cCount" min="1" max="20"></label>
+      <label>Setelah soal selesai
+        <select id="cAuto"><option value="4">Lanjut otomatis 4 detik</option><option value="7">Lanjut otomatis 7 detik</option><option value="0">Manual (guru tekan Lewati)</option></select></label>
+      <label class="chk"><input type="checkbox" id="cShufQ"> Acak urutan soal</label>
+      <label class="chk"><input type="checkbox" id="cShufO"> Acak urutan pilihan</label>
+    </div>
+    <div class="bankrow">
+      <span id="bankInfo"></span>
+      <button class="cbtn" id="importBtn">Muat soal (.json)</button>
+      <button class="cbtn" id="dlBtn">Unduh bank soal</button>
+      <input type="file" id="fileIn" accept=".json,application/json" hidden>
+    </div>
+    <ul class="rules">
+      <li>Kedua tim menjawab serentak di sisi masing-masing. Setiap tim hanya bisa mengunci satu jawaban per soal.</li>
+      <li>Jawaban benar mendapat 100 poin. Jawaban benar yang paling cepat mendapat bonus 50 poin.</li>
+      <li>Soal selesai saat kedua tim sudah menjawab atau waktu habis.</li>
+    </ul>
+    <button class="go" id="goBtn">MULAI MAIN</button>
+    <p class="note">Uji coba dengan keyboard: tim kiri A S D F, tim kanan J K L ;</p>
+  </div>
+</div>
+
+<div class="ov" id="ready"><span>Bersiap, soal pertama sebentar lagi</span><b id="readyNum">3</b></div>
+
+<div class="ov" id="pauseOv"><h2>JEDA</h2><button class="cbtn resume" id="bResume2">⏵ Lanjut</button></div>
+
+<div class="ov" id="result">
+  <div class="card">
+    <h2>Permainan selesai</h2>
+    <div id="resTitle"></div>
+    <div class="rcards" id="rcards"></div>
+    <div class="rbtns">
+      <button class="cbtn start" id="bAgain">↺ Main lagi</button>
+      <button class="cbtn" id="bCloseRes">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" role="status"></div>
+
+<!-- BANK SOAL (JSON). Untuk mengubah soal: edit bagian ini, atau gunakan tombol "Muat soal (.json)" di layar awal.
+     Format tiap soal: {"pertanyaan": "...", "opsi": ["A","B","C","D"], "kunci": indeks jawaban benar mulai dari 0, "pembahasan": "..."} -->
+<script type="application/json" id="bank">
+{
+  "judul": "Microsoft Word Kelas 7",
+  "soal": [
+    {"pertanyaan":"Microsoft Word termasuk jenis perangkat lunak …","opsi":["Pengolah angka","Pengolah kata","Pengolah presentasi","Pengolah basis data"],"kunci":1,"pembahasan":"Microsoft Word adalah aplikasi pengolah kata (word processor) untuk membuat surat, laporan, dan dokumen."},
+    {"pertanyaan":"Ekstensi (akhiran) berkas dokumen Microsoft Word versi terbaru adalah …","opsi":[".docx",".xlsx",".pptx",".txt"],"kunci":0,"pembahasan":".docx untuk Word, .xlsx untuk Excel, .pptx untuk PowerPoint, .txt untuk teks biasa."},
+    {"pertanyaan":"Pintasan keyboard untuk menyimpan dokumen adalah …","opsi":["Ctrl + P","Ctrl + S","Ctrl + O","Ctrl + N"],"kunci":1,"pembahasan":"Ctrl + S = Save. Ctrl + P = Print, Ctrl + O = Open, Ctrl + N = dokumen baru."},
+    {"pertanyaan":"Pintasan keyboard untuk menempel (paste) teks yang sudah disalin adalah …","opsi":["Ctrl + X","Ctrl + C","Ctrl + V","Ctrl + Z"],"kunci":2,"pembahasan":"Ctrl + C menyalin, Ctrl + X memotong, Ctrl + V menempel."},
+    {"pertanyaan":"Untuk membatalkan tindakan terakhir (undo), tekan …","opsi":["Ctrl + Y","Ctrl + Z","Ctrl + U","Ctrl + B"],"kunci":1,"pembahasan":"Ctrl + Z = Undo (batalkan). Ctrl + Y = Redo (ulangi)."},
+    {"pertanyaan":"Tab pada Ribbon yang dipakai untuk menyisipkan tabel, gambar, dan bentuk adalah …","opsi":["Home","Insert","Review","View"],"kunci":1,"pembahasan":"Tab Insert berisi menu untuk menyisipkan tabel, gambar, bentuk, nomor halaman, dan lainnya."},
+    {"pertanyaan":"Mengatur margin, orientasi, dan ukuran kertas dilakukan pada tab …","opsi":["Layout (Page Layout)","Home","Insert","References"],"kunci":0,"pembahasan":"Pengaturan halaman (Margins, Orientation, Size) ada pada tab Layout atau Page Layout."},
+    {"pertanyaan":"Tombol B pada kelompok Font berfungsi untuk …","opsi":["Memiringkan teks","Menebalkan teks","Menggarisbawahi teks","Menyorot teks"],"kunci":1,"pembahasan":"B = Bold (tebal), pintasannya Ctrl + B. I = Italic (miring), U = Underline (garis bawah)."},
+    {"pertanyaan":"Pintasan Ctrl + U digunakan untuk …","opsi":["Menebalkan teks","Memiringkan teks","Memberi garis bawah","Mencari kata"],"kunci":2,"pembahasan":"Ctrl + U = Underline (garis bawah). Ctrl + B menebalkan dan Ctrl + I memiringkan."},
+    {"pertanyaan":"Perataan teks yang membuat tepi kiri dan kanan paragraf sama-sama rapi disebut …","opsi":["Align Left","Center","Align Right","Justify"],"kunci":3,"pembahasan":"Justify (rata kiri-kanan) meratakan kedua sisi paragraf. Pintasannya Ctrl + J."},
+    {"pertanyaan":"Fitur yang dipakai untuk mengatur jarak antarbaris dalam paragraf adalah …","opsi":["Line and Paragraph Spacing","Page Border","Watermark","Word Count"],"kunci":0,"pembahasan":"Line and Paragraph Spacing pada tab Home mengatur jarak antarbaris, misalnya 1,0 atau 1,5."},
+    {"pertanyaan":"Area di bagian bawah halaman yang sering berisi nomor halaman disebut …","opsi":["Header","Footer","Margin","Caption"],"kunci":1,"pembahasan":"Footer ada di bagian bawah halaman, sedangkan Header di bagian atas."},
+    {"pertanyaan":"Format Painter digunakan untuk …","opsi":["Menyalin format teks ke teks lain","Mengganti warna kertas","Menghapus seluruh teks","Mencetak dokumen"],"kunci":0,"pembahasan":"Format Painter menyalin format (jenis huruf, ukuran, warna) dari satu teks ke teks lain, bukan menyalin isinya."},
+    {"pertanyaan":"Jarak kosong antara tepi kertas dan isi dokumen disebut …","opsi":["Indent","Margin","Tab Stop","Border"],"kunci":1,"pembahasan":"Margin adalah ruang kosong di tepi kertas (atas, bawah, kiri, kanan)."},
+    {"pertanyaan":"Fitur untuk memberi warna latar pada teks seperti stabilo adalah …","opsi":["Font Color","Page Color","Text Highlight Color","Text Effects"],"kunci":2,"pembahasan":"Text Highlight Color memberi warna sorot pada teks. Font Color mengubah warna hurufnya."},
+    {"pertanyaan":"Pintasan Ctrl + H membuka kotak dialog untuk …","opsi":["Mencetak dokumen","Mengganti kata (Replace)","Menyimpan dokumen","Memeriksa ejaan"],"kunci":1,"pembahasan":"Ctrl + H membuka Find and Replace pada tab Replace untuk mengganti kata di seluruh dokumen."},
+    {"pertanyaan":"Garis bergelombang berwarna merah di bawah sebuah kata biasanya menandakan …","opsi":["Kata tersebut tebal","Kemungkinan salah ejaan","Kata sudah disorot","Kata berupa tautan"],"kunci":1,"pembahasan":"Garis merah bergelombang dari fitur pemeriksa ejaan (Spelling) menandai kata yang mungkin salah eja."},
+    {"pertanyaan":"Pintasan keyboard untuk membuka pengaturan cetak (print) adalah …","opsi":["Ctrl + P","Ctrl + S","Ctrl + F","Ctrl + K"],"kunci":0,"pembahasan":"Ctrl + P = Print. Ctrl + F = cari kata, Ctrl + K = sisipkan tautan."},
+    {"pertanyaan":"Orientasi kertas yang posisinya mendatar (lebar) disebut …","opsi":["Portrait","Landscape","Letter","Legal"],"kunci":1,"pembahasan":"Landscape = mendatar, Portrait = tegak. Letter dan Legal adalah ukuran kertas."},
+    {"pertanyaan":"Pintasan keyboard untuk memblok (memilih) seluruh isi dokumen adalah …","opsi":["Ctrl + A","Ctrl + D","Ctrl + E","Ctrl + L"],"kunci":0,"pembahasan":"Ctrl + A = Select All. Ctrl + E meratakan tengah dan Ctrl + L meratakan kiri."}
+  ]
+}
+</script>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var LETTERS = ['A', 'B', 'C', 'D'];
+  var BASE = 100, BONUS = 50, TIE_MS = 1;
+  var LS = 'clickbattle-word7-v1';
+  var RING_C = 326.73;
+
+  /* ---------- Bank soal ---------- */
+  var bank = JSON.parse($('#bank').textContent);
+  var bankLabel = 'bawaan';
+
+  function validateBank(j) {
+    if (!j || !Array.isArray(j.soal) || j.soal.length < 1) throw new Error('Berkas harus berisi properti "soal" berupa daftar soal.');
+    j.soal.forEach(function (s, i) {
+      var n = 'Soal ' + (i + 1) + ': ';
+      if (typeof s.pertanyaan !== 'string' || !s.pertanyaan.trim()) throw new Error(n + '"pertanyaan" kosong.');
+      if (!Array.isArray(s.opsi) || s.opsi.length < 2 || s.opsi.length > 4) throw new Error(n + '"opsi" harus 2 sampai 4 pilihan.');
+      if (!s.opsi.every(function (o) { return typeof o === 'string' && o.trim(); })) throw new Error(n + 'ada pilihan yang kosong.');
+      if (!Number.isInteger(s.kunci) || s.kunci < 0 || s.kunci >= s.opsi.length) throw new Error(n + '"kunci" harus nomor pilihan benar mulai dari 0.');
+    });
+    return j;
+  }
+
+  /* ---------- State ---------- */
+  var cfg = { names: ['TIM BIRU', 'TIM MERAH'], time: 20, count: 20, shufQ: true, shufO: true, auto: 4 };
+  try { var saved = JSON.parse(localStorage.getItem(LS) || 'null'); if (saved) Object.keys(cfg).forEach(function (k) { if (saved[k] !== undefined) cfg[k] = saved[k]; }); } catch (e) {}
+  function saveCfg() { try { localStorage.setItem(LS, JSON.stringify(cfg)); } catch (e) {} }
+
+  var S = {
+    phase: 'idle',          // idle | countdown | question | reveal | finished
+    paused: false,
+    list: [], idx: 0,
+    scores: [0, 0], shown: [0, 0],
+    ans: [null, null],
+    elapsed: 0, limit: 20000, last: performance.now(),
+    endDelay: -1, revealLeft: 0, countLeft: 0, lastSec: -1,
+    hist: [[], []], stats: [{}, {}], resetArm: 0
+  };
+
+  /* ---------- Suara ---------- */
+  var actx = null, muted = false;
+  function ac() {
+    if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+    if (actx && actx.state === 'suspended') actx.resume();
+    return actx;
+  }
+  function tone(f, d, type, v, delay) {
+    if (muted) return; var c = ac(); if (!c) return;
+    var t = c.currentTime + (delay || 0), o = c.createOscillator(), g = c.createGain();
+    o.type = type || 'square'; o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(v || .06, t); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + d + .03);
+  }
+  var sfx = {
+    lock: function () { tone(520, .09); },
+    nope: function () { tone(150, .14, 'sawtooth', .05); },
+    tick: function () { tone(900, .05, 'square', .04); },
+    ok: function () { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, .12, 'square', .05, i * .07); }); },
+    bad: function () { tone(220, .18, 'sawtooth', .05); tone(165, .25, 'sawtooth', .05, .15); },
+    count: function () { tone(660, .12); },
+    go: function () { [392, 523, 659, 784].forEach(function (f, i) { tone(f, .1, 'square', .05, i * .08); }); },
+    win: function () { [523, 659, 784, 1047, 784, 1047, 1319].forEach(function (f, i) { tone(f, .16, 'square', .05, i * .12); }); }
+  };
+
+  /* ---------- Util ---------- */
+  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function fmtT(ms) { return (ms / 1000).toFixed(1).replace('.', ',') + ' dtk'; }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+  var toastT;
+  function toast(msg) { var t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove('on'); }, 4200); }
+  function ov(id, on) { $(id).classList.toggle('on', !!on); }
+  function name(t) { return cfg.names[t]; }
+
+  /* ---------- Panel ---------- */
+  [0, 1].forEach(function (t) {
+    var p = $('#panel' + t);
+    p.innerHTML =
+      '<div class="p-head"><div class="p-name" id="name' + t + '"></div><div class="p-score"><b id="score' + t + '">0</b><span>poin</span></div></div>' +
+      '<div class="p-status" id="status' + t + '"></div>' +
+      '<div class="p-q" id="q' + t + '"></div>' +
+      '<div class="opts" id="opts' + t + '"></div>' +
+      '<div class="p-res" id="res' + t + '"></div>';
+    p.addEventListener('pointerdown', function (e) {
+      var b = e.target.closest('.opt'); if (!b) return;
+      e.preventDefault();
+      b.classList.add('pressed'); setTimeout(function () { b.classList.remove('pressed'); }, 140);
+      answer(t, +b.dataset.i);
+    });
+    p.addEventListener('click', function (e) {          // aktivasi lewat keyboard (Enter/Spasi)
+      var b = e.target.closest('.opt'); if (b && e.detail === 0) answer(t, +b.dataset.i);
+    });
+  });
+
+  function setNames() { [0, 1].forEach(function (t) { $('#name' + t).textContent = name(t); }); }
+
+  function buildOpts(t, q) {
+    var box = $('#opts' + t); box.innerHTML = ''; box.style.setProperty('--n', q.opsi.length);
+    q.opsi.forEach(function (txt, i) {
+      var b = el('button', 'opt'); b.type = 'button'; b.dataset.i = i;
+      b.append(el('span', 'key', LETTERS[i]), el('span', 'txt', txt), el('span', 'mark'));
+      box.append(b);
+    });
+  }
+
+  function setStatus(t, text, cls) { var s = $('#status' + t); s.textContent = text; s.className = 'p-status' + (cls ? ' ' + cls : ''); }
+
+  function animateScore(t) {
+    var from = S.shown[t], to = S.scores[t], node = $('#score' + t), t0 = performance.now();
+    node.classList.remove('pop'); void node.offsetWidth; node.classList.add('pop');
+    (function step(now) {
+      var k = Math.min(1, (now - t0) / 600);
+      S.shown[t] = Math.round(from + (to - from) * k); node.textContent = S.shown[t];
+      if (k < 1) requestAnimationFrame(step);
+    })(t0);
+  }
+
+  /* ---------- Progress & timer ---------- */
+  function buildProgress(n) {
+    var p = $('#progress'); p.innerHTML = '';
+    for (var i = 0; i < n; i++) p.append(el('i', 'seg'));
+  }
+  function updateProgress() {
+    var segs = document.querySelectorAll('#progress .seg');
+    segs.forEach(function (s, i) {
+      s.className = 'seg' + ((i < S.idx || (i === S.idx && (S.phase === 'reveal' || S.phase === 'finished'))) ? ' done' : (i === S.idx && S.phase === 'question' ? ' cur' : ''));
+    });
+    if (S.phase === 'finished') segs.forEach(function (s) { s.className = 'seg done'; });
+  }
+  function drawTimer(remaining) {
+    var frac = Math.max(0, remaining / S.limit);
+    $('#ring').style.strokeDashoffset = RING_C * (1 - frac);
+    $('#tnum').textContent = Math.max(0, Math.ceil(remaining / 1000));
+    $('#timer').classList.toggle('hot', remaining <= 5000 && remaining > 0);
+  }
+  function tickerQuestion() {
+    var t = $('#ticker'); t.innerHTML = '';
+    t.append(el('b', '', 'Aturan:'), el('span', '', 'Kunci satu jawaban per soal. Jawaban benar yang paling cepat mendapat bonus +' + BONUS + '.'));
+  }
+
+  /* ---------- Alur permainan ---------- */
+  function readSetup() {
+    cfg.names = [$('#n0').value.trim() || 'TIM BIRU', $('#n1').value.trim() || 'TIM MERAH'];
+    cfg.time = +$('#cTime').value; cfg.auto = +$('#cAuto').value;
+    cfg.shufQ = $('#cShufQ').checked; cfg.shufO = $('#cShufO').checked;
+    var c = parseInt($('#cCount').value, 10); if (!c || c < 1) c = 20;
+    cfg.count = Math.min(c, bank.soal.length);
+    saveCfg();
+  }
+
+  function ensureCam() {   // dipanggil saat Mulai: tampilkan konfirmasi izin kamera jika slider > 0
+    if (+rng.value === 0) return Promise.resolve();
+    if (stream) { camEnable(true); return Promise.resolve(); }
+    if (camBusy) return Promise.resolve();
+    camBusy = true;
+    return camOn().then(function (ok) { camBusy = false; if (!ok) { rng.value = 0; bgLabel(); } });
+  }
+  function startGame() {
+    if ((S.phase !== 'idle' && S.phase !== 'finished') || S.starting) return;
+    S.starting = true; ac(); readSetup();
+    ensureCam().then(function () { S.starting = false; beginGame(); });
+  }
+  function beginGame() {
+    var idxs = bank.soal.map(function (_, i) { return i; });
+    if (cfg.shufQ) shuffle(idxs);
+    idxs = idxs.slice(0, cfg.count);
+    S.list = idxs.map(function (i) {
+      var s = bank.soal[i], o = s.opsi.map(function (t, k) { return { t: t, k: k }; });
+      if (cfg.shufO) shuffle(o);
+      return { q: s.pertanyaan, opsi: o.map(function (x) { return x.t; }), kunci: o.findIndex(function (x) { return x.k === s.kunci; }), pem: s.pembahasan || '' };
+    });
+    S.idx = 0; S.scores = [0, 0]; S.shown = [0, 0]; S.limit = cfg.time * 1000;
+    S.hist = [[], []]; S.stats = [{ benar: 0, bonus: 0, sum: 0 }, { benar: 0, bonus: 0, sum: 0 }];
+    S.paused = false; S.ans = [null, null];
+    [0, 1].forEach(function (t) { $('#score' + t).textContent = '0'; });
+    setNames(); buildProgress(S.list.length);
+    ov('#setup', false); ov('#result', false); ov('#pauseOv', false);
+    S.phase = 'countdown'; S.countLeft = 3000; S.lastCount = 4;
+    ov('#ready', true); updateProgress(); sync();
+  }
+
+  function nextQuestion() {
+    var q = S.list[S.idx];
+    S.phase = 'question'; S.ans = [null, null]; S.elapsed = 0; S.endDelay = -1; S.lastSec = -1;
+    [0, 1].forEach(function (t) {
+      var p = $('#panel' + t); p.classList.remove('locked', 'shake');
+      $('#q' + t).textContent = q.q;
+      buildOpts(t, q);
+      setStatus(t, 'Ayo jawab sekarang!');
+      var r = $('#res' + t); r.className = 'p-res'; r.innerHTML = '';
+    });
+    var qn = $('#qnum'); qn.innerHTML = ''; qn.append('Soal ' + (S.idx + 1), el('small', '', 'dari ' + S.list.length));
+    $('#nextInfo').textContent = '';
+    tickerQuestion(); drawTimer(S.limit); updateProgress(); sync();
+  }
+
+  function answer(t, i) {
+    if (S.phase !== 'question' || S.paused) return;
+    if (S.ans[t]) {                                   // validasi: satu jawaban per tim per soal
+      var p = $('#panel' + t); p.classList.remove('shake'); void p.offsetWidth; p.classList.add('shake');
+      setStatus(t, 'Jawaban sudah terkunci. Satu kali per soal.', 'warn'); sfx.nope();
+      return;
+    }
+    var tm = Math.min(S.limit, S.elapsed + (performance.now() - S.last));
+    S.ans[t] = { i: i, t: tm };
+    $('#panel' + t).classList.add('locked');
+    var btns = $('#opts' + t).children; if (btns[i]) btns[i].classList.add('picked');
+    setStatus(t, 'Terkunci ✔', 'locked');
+    var o = 1 - t; if (!S.ans[o]) setStatus(o, 'Lawan sudah mengunci jawaban!', 'warn');
+    sfx.lock();
+    if (S.ans[0] && S.ans[1]) S.endDelay = 450;
+  }
+
+  function endRound() {
+    if (S.phase !== 'question') return;
+    S.phase = 'reveal'; S.endDelay = -1;
+    var q = S.list[S.idx];
+    var res = [0, 1].map(function (t) {
+      var a = S.ans[t];
+      if (!a) return { st: 'kosong', pts: 0 };
+      if (a.i === q.kunci) return { st: 'benar', pts: BASE, t: a.t };
+      return { st: 'salah', pts: 0, t: a.t };
+    });
+    var ok = res.filter(function (r) { return r.st === 'benar'; });
+    if (ok.length) {
+      var min = Math.min.apply(null, ok.map(function (r) { return r.t; }));
+      ok.forEach(function (r) { if (r.t - min < TIE_MS) { r.bonus = true; r.pts += BONUS; } });
+    }
+    res.forEach(function (r, t) {
+      S.scores[t] += r.pts; animateScore(t);
+      S.hist[t].push(r.st === 'benar' ? (r.bonus ? 'bonus' : 'benar') : (r.st === 'salah' ? 'salah' : 'kosong'));
+      if (r.st === 'benar') { S.stats[t].benar++; S.stats[t].sum += r.t; if (r.bonus) S.stats[t].bonus++; }
+      var btns = $('#opts' + t).children, a = S.ans[t];
+      Array.prototype.forEach.call(btns, function (b, i) {
+        b.classList.remove('picked');
+        if (i === q.kunci) { b.classList.add('correct'); b.querySelector('.mark').textContent = '✔'; }
+        else if (a && a.i === i) { b.classList.add('wrong'); b.querySelector('.mark').textContent = '✖'; }
+        else b.classList.add('dim');
+      });
+      $('#panel' + t).classList.remove('locked');
+      var box = $('#res' + t); box.innerHTML = '';
+      if (r.st === 'benar') { box.className = 'p-res ' + (r.bonus ? 'fast' : 'good'); box.append(el('span', '', (r.bonus ? '⚡ TERCEPAT +' : '✔ BENAR +') + r.pts), el('small', '', fmtT(r.t))); }
+      else if (r.st === 'salah') { box.className = 'p-res bad'; box.append(el('span', '', '✖ SALAH +0'), el('small', '', fmtT(r.t))); }
+      else { box.className = 'p-res none'; box.append(el('span', '', 'TIDAK MENJAWAB +0')); }
+      setStatus(t, '');
+    });
+    if (ok.length) sfx.ok(); else sfx.bad();
+    var tk = $('#ticker'); tk.innerHTML = '';
+    tk.append(el('b', '', 'Jawaban: ' + LETTERS[q.kunci] + '. ' + q.opsi[q.kunci]), el('span', '', q.pem));
+    drawTimer(0); $('#tnum').textContent = '✔';
+    S.revealLeft = cfg.auto > 0 ? cfg.auto * 1000 : Infinity;
+    updateNextInfo(); updateProgress(); sync();
+  }
+
+  function updateNextInfo() {
+    var last = S.idx + 1 >= S.list.length;
+    $('#nextInfo').textContent = isFinite(S.revealLeft)
+      ? (last ? 'Hasil akhir ' : 'Soal berikutnya ') + Math.ceil(S.revealLeft / 1000) + ' dtk'
+      : 'Tekan Lewati untuk ' + (last ? 'melihat hasil' : 'lanjut');
+  }
+
+  function advance() {
+    if (S.idx + 1 >= S.list.length) finish(); else { S.idx++; nextQuestion(); }
+  }
+
+  function finish() {
+    S.phase = 'finished'; updateProgress(); sync();
+    var a = S.scores[0], b = S.scores[1], win = a === b ? -1 : (a > b ? 0 : 1);
+    var title = $('#resTitle'); title.textContent = win < 0 ? 'SERI!' : name(win) + ' MENANG!';
+    title.style.color = win === 0 ? 'var(--cyan)' : (win === 1 ? 'var(--pink)' : 'var(--gold)');
+    var host = $('#rcards'); host.innerHTML = '';
+    [0, 1].forEach(function (t) {
+      var st = S.stats[t], c = el('div', 'rc t' + t + (win === t ? ' win' : ''));
+      c.append(el('div', 'rn', name(t)), el('div', 'rs', S.scores[t]));
+      var ul = el('ul');
+      ul.append(el('li', '', 'Benar: ' + st.benar + ' dari ' + S.list.length),
+                el('li', '', 'Bonus tercepat: ' + st.bonus + ' kali'),
+                el('li', '', 'Rata-rata waktu menjawab benar: ' + (st.benar ? fmtT(st.sum / st.benar) : '-')));
+      c.append(ul);
+      var d = el('div', 'dots'); S.hist[t].forEach(function (h) { d.append(el('i', h)); }); c.append(d);
+      host.append(c);
+    });
+    ov('#result', true);
+    sfx.win();
+    confetti(win === 0 ? ['#18e4ff', '#ffd93b', '#fff'] : (win === 1 ? ['#ff3d8f', '#ffd93b', '#fff'] : ['#18e4ff', '#ff3d8f', '#ffd93b']));
+  }
+
+  function confetti(colors) {
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var host = $('#result');
+    for (var i = 0; i < 80; i++) {
+      var c = el('i', 'conf');
+      c.style.left = Math.random() * 100 + '%'; c.style.background = colors[i % colors.length];
+      c.style.animationDuration = (2.6 + Math.random() * 3) + 's'; c.style.animationDelay = (Math.random() * 1.2) + 's';
+      host.append(c); (function (n) { setTimeout(function () { n.remove(); }, 7500); })(c);
+    }
+  }
+
+  /* ---------- Kontrol guru ---------- */
+  function pause() { if (S.paused || ['countdown', 'question', 'reveal'].indexOf(S.phase) < 0) return; S.paused = true; ov('#pauseOv', true); sync(); }
+  function resume() { if (!S.paused) return; S.paused = false; S.last = performance.now(); ov('#pauseOv', false); sync(); }
+  function skip() {
+    if (S.paused) return;
+    if (S.phase === 'question') endRound(); else if (S.phase === 'reveal') advance();
+  }
+  function resetGame() {
+    S.phase = 'idle'; S.paused = false; S.scores = [0, 0]; S.shown = [0, 0]; S.ans = [null, null]; S.idx = 0; S.list = [];
+    [0, 1].forEach(function (t) {
+      $('#score' + t).textContent = '0'; $('#q' + t).textContent = 'Tekan Mulai untuk memulai pertandingan.';
+      $('#opts' + t).innerHTML = ''; $('#res' + t).innerHTML = ''; $('#res' + t).className = 'p-res'; setStatus(t, '');
+      $('#panel' + t).classList.remove('locked');
+    });
+    $('#qnum').innerHTML = 'Siap?<small>&nbsp;</small>'; $('#tnum').textContent = '--'; $('#ring').style.strokeDashoffset = 0; $('#timer').classList.remove('hot');
+    $('#nextInfo').textContent = ''; $('#ticker').textContent = 'Atur tim dan soal pada layar pengaturan, lalu mulai.';
+    buildProgress(cfg.count); fillSetup();
+    ov('#ready', false); ov('#pauseOv', false); ov('#result', false); ov('#setup', true); sync();
+  }
+
+  function sync() {
+    var idle = S.phase === 'idle', fin = S.phase === 'finished', playing = ['countdown', 'question', 'reveal'].indexOf(S.phase) >= 0;
+    $('#bStart').disabled = !(idle || fin);
+    $('#bPause').disabled = !(playing && !S.paused);
+    $('#bResume').disabled = !S.paused;
+    $('#bSkip').disabled = !((S.phase === 'question' || S.phase === 'reveal') && !S.paused);
+    $('#bReset').disabled = idle;
+    if (idle) disarmReset();
+  }
+  function disarmReset() { S.resetArm = 0; var b = $('#bReset'); b.classList.remove('arm'); b.textContent = '↺ Reset'; }
+
+  /* ---------- Loop waktu ---------- */
+  setInterval(function () {
+    var now = performance.now(), dt = Math.min(now - S.last, 250); S.last = now;
+    if (S.paused) return;
+    if (S.phase === 'countdown') {
+      S.countLeft -= dt; var n = Math.ceil(S.countLeft / 1000);
+      if (n !== S.lastCount && n > 0) { S.lastCount = n; var b = $('#readyNum'); b.textContent = n; b.style.animation = 'none'; void b.offsetWidth; b.style.animation = ''; sfx.count(); }
+      if (S.countLeft <= 0) { ov('#ready', false); sfx.go(); nextQuestion(); }
+    } else if (S.phase === 'question') {
+      S.elapsed += dt;
+      var rem = S.limit - S.elapsed; drawTimer(rem);
+      var sec = Math.ceil(rem / 1000);
+      if (rem <= 5000 && sec !== S.lastSec && sec > 0) { S.lastSec = sec; sfx.tick(); }
+      if (S.endDelay >= 0) { S.endDelay -= dt; if (S.endDelay <= 0) { endRound(); return; } }
+      if (rem <= 0) endRound();
+    } else if (S.phase === 'reveal' && isFinite(S.revealLeft)) {
+      S.revealLeft -= dt; updateNextInfo();
+      if (S.revealLeft <= 0) advance();
+    }
+  }, 50);
+
+  /* ---------- Pengaturan awal ---------- */
+  function fillSetup() {
+    $('#n0').value = cfg.names[0]; $('#n1').value = cfg.names[1];
+    $('#cTime').value = String(cfg.time); $('#cAuto').value = String(cfg.auto);
+    $('#cShufQ').checked = cfg.shufQ; $('#cShufO').checked = cfg.shufO;
+    var max = bank.soal.length, c = $('#cCount'); c.max = max; c.value = Math.min(cfg.count, max);
+    $('#bankInfo').textContent = 'Bank soal ' + bankLabel + ': ' + max + ' soal (' + (bank.judul || 'tanpa judul') + ')' + (max < 20 ? '. Kurang dari 20 soal.' : '');
+    setNames();
+  }
+  ['n0', 'n1'].forEach(function (id, t) {
+    $('#' + id).addEventListener('input', function () { cfg.names[t] = this.value.trim() || (t ? 'TIM MERAH' : 'TIM BIRU'); setNames(); });
+  });
+  $('#goBtn').addEventListener('click', startGame);
+  $('#bStart').addEventListener('click', startGame);
+  $('#bPause').addEventListener('click', pause);
+  $('#bResume').addEventListener('click', resume);
+  $('#bResume2').addEventListener('click', resume);
+  $('#bSkip').addEventListener('click', skip);
+  $('#bAgain').addEventListener('click', function () { resetGame(); });
+  $('#bCloseRes').addEventListener('click', function () { ov('#result', false); });
+  $('#bReset').addEventListener('click', function () {
+    if (S.resetArm) { resetGame(); return; }
+    S.resetArm = 1; var b = this; b.classList.add('arm'); b.textContent = 'Yakin reset?';
+    setTimeout(function () { if (S.phase !== 'idle') disarmReset(); }, 3000);
+  });
+  $('#bSound').addEventListener('click', function () { muted = !muted; this.textContent = muted ? '🔇 Senyap' : '🔊 Suara'; if (!muted) { ac(); sfx.lock(); } });
+  $('#bFull').addEventListener('click', function () {
+    if (document.fullscreenElement) document.exitFullscreen(); else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(function () { toast('Layar penuh tidak diizinkan oleh peramban.'); });
+  });
+  $('#bHide').addEventListener('click', function () { document.body.classList.add('hide-ctl'); });
+  $('#ctlShow').addEventListener('click', function () { document.body.classList.remove('hide-ctl'); });
+
+  /* Muat / unduh bank soal */
+  $('#importBtn').addEventListener('click', function () { $('#fileIn').click(); });
+  $('#fileIn').addEventListener('change', function () {
+    var f = this.files[0]; this.value = ''; if (!f) return;
+    var r = new FileReader();
+    r.onload = function () {
+      try { bank = validateBank(JSON.parse(r.result)); bankLabel = 'dari berkas'; cfg.count = Math.min(cfg.count, bank.soal.length); fillSetup(); toast('Bank soal dimuat: ' + bank.soal.length + ' soal.'); }
+      catch (e) { toast('Gagal memuat soal. ' + (e && e.message ? e.message : 'Format JSON tidak valid.')); }
+    };
+    r.onerror = function () { toast('Berkas tidak bisa dibaca.'); };
+    r.readAsText(f);
+  });
+  $('#dlBtn').addEventListener('click', function () {
+    var blob = new Blob([JSON.stringify(bank, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'bank-soal-click-battle.json';
+    document.body.append(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  });
+
+  /* ---------- Latar: slider Arcade ke Kamera Depan ---------- */
+  var cam = $('#cam'), rng = $('#bgRange'), stream = null, camBusy = false;
+  function bgLabel() {
+    var v = +rng.value, k = v / 100, root = document.body.style;
+    $('#bgVal').textContent = v === 0 ? 'Arcade' : 'Kamera ' + v + '%';
+    cam.style.opacity = k;
+    root.setProperty('--ui', (1 - 0.8 * k).toFixed(2));        // tulisan dan tampilan game makin transparan
+    root.setProperty('--pa', (0.82 * (1 - k)).toFixed(2));     // latar panel makin bening
+    root.setProperty('--pq', (0.55 * (1 - k)).toFixed(2));     // latar kotak soal makin bening
+    root.setProperty('--sh', (0.28 - 0.2 * k).toFixed(2));     // lapisan gelap di atas kamera makin tipis
+    root.setProperty('--bl', v > 0 ? '0px' : '4px');         // tanpa blur agar gambar kamera tajam
+    document.body.classList.toggle('cam', v > 0);
+  }
+  function camEnable(on) { if (stream) stream.getTracks().forEach(function (t) { t.enabled = on; }); }
+  function camStop() { if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; } cam.srcObject = null; }
+  function camOff() { camEnable(false); }   // hanya disembunyikan, tidak ditutup, supaya izin tidak ditanya lagi
+  function camOn() {
+    if (stream) { camEnable(true); return Promise.resolve(true); }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { toast('Peramban ini tidak mendukung akses kamera.'); return Promise.resolve(false); }
+    return navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false })
+      .then(function (s) { stream = s; cam.srcObject = s; return cam.play().catch(function () {}).then(function () { return true; }); })
+      .catch(function () { toast('Kamera tidak bisa dibuka. Izinkan akses kamera pada peramban, lalu geser slider lagi.'); return false; });
+  }
+  rng.addEventListener('input', function () {
+    bgLabel();
+    if (+rng.value > 0) {
+      if (stream) camEnable(true);
+      if (!stream && !camBusy) {
+        camBusy = true;
+        camOn().then(function (ok) {
+          camBusy = false;
+          if (!ok) { rng.value = 0; bgLabel(); }
+          else if (+rng.value === 0) camOff();
+        });
+      }
+    } else camOff();
+  });
+  window.addEventListener('pagehide', camStop);
+  bgLabel();
+
+  /* ---------- Keyboard (uji coba) ---------- */
+  var KEYS = { a: [0, 0], s: [0, 1], d: [0, 2], f: [0, 3], j: [1, 0], k: [1, 1], l: [1, 2], ';': [1, 3] };
+  document.addEventListener('keydown', function (e) {
+    if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    var tg = e.target && e.target.tagName; if (tg === 'INPUT' || tg === 'SELECT' || tg === 'TEXTAREA') return;
+    var m = KEYS[e.key.toLowerCase()]; if (m) answer(m[0], m[1]);
+  });
+  document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+  /* ---------- Mulai ---------- */
+  resetGame();
+})();
+</script>
+</body>
+</html>
